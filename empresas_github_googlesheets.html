@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Empresas Internacionales</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;--surface3:#e8e6de;
+    --border:#e2e0d8;--border2:#cccab8;--text:#1a1916;--text2:#6b6960;--text3:#9b9a94;
+    --accent:#1a3a2a;--accent2:#2d6647;--accent-light:#e8f0eb;
+    --amber:#b86f00;--amber-light:#fef3dc;
+    --red:#b83232;--red-light:#fdeaea;
+    --blue:#1a3f6b;--blue-light:#e8eef6;
+    --green-bg:#e0f0e4;--green-text:#1a5c2a;
+    --radius:10px;--radius-sm:6px;
+    --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+
+  /* SETUP WIZARD */
+  .setup-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+  .setup-overlay.hidden{display:none}
+  .setup-box{background:var(--surface);border-radius:var(--radius);width:600px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+  .setup-header{background:var(--accent);color:#fff;padding:20px 24px;border-radius:var(--radius) var(--radius) 0 0}
+  .setup-header h2{font-size:16px;font-weight:500;margin-bottom:4px}
+  .setup-header p{font-size:12px;opacity:.8}
+  .setup-body{padding:24px}
+  .setup-step{margin-bottom:20px;padding:16px;background:var(--surface2);border-radius:var(--radius-sm);border-left:3px solid var(--border2)}
+  .setup-step.active{border-left-color:var(--accent2);background:var(--accent-light)}
+  .setup-step-num{font-size:10px;font-weight:500;color:var(--accent2);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:6px}
+  .setup-step h3{font-size:13px;font-weight:500;margin-bottom:6px}
+  .setup-step p{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px}
+  .setup-step a{color:var(--accent2);text-decoration:none;font-weight:500}
+  .setup-step a:hover{text-decoration:underline}
+  .setup-step code{font-family:var(--mono);background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:11px;color:var(--text)}
+  .setup-input-row{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .setup-input{font-family:var(--mono);font-size:12px;flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none}
+  .setup-input:focus{border-color:var(--accent2)}
+  .setup-input::placeholder{color:var(--text3);font-family:var(--sans)}
+  .setup-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background:var(--surface2);border-radius:0 0 var(--radius) var(--radius)}
+  .setup-note{font-size:11px;color:var(--text3);margin-top:6px;font-style:italic}
+
+  /* TOPBAR */
+  .topbar{background:var(--accent);color:#fff;padding:0 20px;display:flex;align-items:center;gap:10px;height:52px;position:sticky;top:0;z-index:100;flex-wrap:wrap}
+  .topbar h1{font-size:13px;font-weight:500;flex:1;letter-spacing:.02em;white-space:nowrap}
+  .pill{font-size:10px;font-family:var(--mono);padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+  .pill-count{background:rgba(255,255,255,0.15);color:#fff}
+  .pill-ok{background:rgba(52,211,153,0.25);color:#6ee7b7}
+  .pill-err{background:rgba(248,113,113,0.25);color:#fca5a5}
+  .pill-wait{background:rgba(251,191,36,0.2);color:#fcd34d}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .pill-saving{background:rgba(251,191,36,0.2);color:#fcd34d;animation:pulse 1.2s infinite}
+  .topbar-btn{font-family:var(--sans);font-size:11px;padding:0 11px;height:28px;border:1px solid rgba(255,255,255,0.25);border-radius:var(--radius-sm);cursor:pointer;background:rgba(255,255,255,0.1);color:#fff;white-space:nowrap;transition:background .12s;flex-shrink:0}
+  .topbar-btn:hover{background:rgba(255,255,255,0.22)}
+  .topbar-btn.hl{background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.5)}
+
+  /* AUTOSAVE BAR */
+  .autosave-bar{background:var(--surface2);border-bottom:1px solid var(--border);padding:5px 20px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text3);font-family:var(--mono);flex-wrap:wrap}
+  .autosave-bar span{flex:1;min-width:160px}
+  .autosave-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;color:var(--text2);flex-shrink:0}
+  .toggle-sw{width:32px;height:18px;background:var(--border2);border-radius:9px;position:relative;transition:background .2s;flex-shrink:0}
+  .toggle-sw.on{background:var(--accent2)}
+  .toggle-knob{width:14px;height:14px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left .2s}
+  .toggle-sw.on .toggle-knob{left:16px}
+
+  /* TABS */
+  .tabs{background:var(--surface);border-bottom:1px solid var(--border);display:flex;padding:0 24px;overflow-x:auto}
+  .tab{padding:10px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);white-space:nowrap;transition:color .15s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+
+  .pane{padding:20px 24px;display:none}
+  .pane.active{display:block}
+
+  /* STATS */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px}
+  .stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;font-family:var(--mono)}
+  .stat-val{font-size:24px;font-weight:500;font-family:var(--mono)}
+
+  /* TOOLBAR */
+  .toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+  .toolbar input,.toolbar select{font-family:var(--sans);font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);height:32px;outline:none;transition:border-color .15s}
+  .toolbar input{flex:1;min-width:180px}
+  .toolbar input:focus,.toolbar select:focus{border-color:var(--accent2)}
+
+  /* BUTTONS */
+  .btn{font-family:var(--sans);font-size:12px;padding:0 13px;height:32px;border:1px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;background:var(--surface);color:var(--text);white-space:nowrap;transition:all .12s;display:inline-flex;align-items:center;gap:5px}
+  .btn:hover{background:var(--surface2)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:500}
+  .btn.primary:hover:not(:disabled){background:var(--accent2);border-color:var(--accent2)}
+  .btn.sm{height:28px;padding:0 10px;font-size:11px}
+  .btn.xs{height:24px;padding:0 8px;font-size:11px}
+  .btn.danger{color:var(--red);border-color:#f0c0c0}
+  .btn.danger:hover{background:var(--red-light)}
+  .btn.ghost{border-color:transparent;background:transparent}
+  .btn.ghost:hover{background:var(--surface2)}
+  .btn.export-btn{border-color:var(--accent2);color:var(--accent2);font-weight:500}
+  .btn.export-btn:hover{background:var(--accent-light)}
+
+  /* TABLE */
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .table-scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{font-size:10px;font-weight:500;color:var(--text2);padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap;letter-spacing:.04em;text-transform:uppercase;font-family:var(--mono)}
+  td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  td:first-child{font-weight:500}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--surface2);cursor:pointer}
+
+  /* BADGES */
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;font-family:var(--mono)}
+  .b-green{background:var(--green-bg);color:var(--green-text)}
+  .b-amber{background:var(--amber-light);color:var(--amber)}
+  .b-red{background:var(--red-light);color:var(--red)}
+  .b-blue{background:var(--blue-light);color:var(--blue)}
+  .b-gray{background:var(--surface2);color:var(--text2)}
+
+  /* FORM */
+  .form-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .form-topbar{padding:13px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface2)}
+  .form-topbar h2{font-size:14px;font-weight:500;flex:1}
+  .fsec{border-bottom:1px solid var(--border)}
+  .fsec:last-child{border-bottom:none}
+  .fsec-hdr{padding:11px 20px;display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--surface2);user-select:none}
+  .fsec-hdr:hover{background:var(--surface3)}
+  .fsec-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .2s}
+  .fsec-hdr.open .fsec-dot{background:var(--accent2)}
+  .fsec-title{font-size:11px;font-weight:500;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;flex:1}
+  .fsec-arrow{font-size:10px;color:var(--text3);transition:transform .2s}
+  .fsec-hdr.open .fsec-arrow{transform:rotate(180deg)}
+  .fsec-body{display:none;padding:16px 20px;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));background:var(--bg)}
+  .fsec-body.open{display:grid}
+  .fsec-body.col1{grid-template-columns:1fr}
+  .fg{display:flex;flex-direction:column;gap:5px}
+  .fg.full{grid-column:1/-1}
+  .fg label{font-size:10px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.05em;font-family:var(--mono)}
+  .fg .req{color:var(--red)}
+  .fg input,.fg select,.fg textarea{font-family:var(--sans);font-size:12px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
+  .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent2)}
+  .fg textarea{resize:vertical;min-height:64px}
+  .fg .hint{font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+  /* SUBTABLES */
+  .sub-panel{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+  .sub-panel-hdr{padding:8px 14px;background:var(--surface2);display:flex;align-items:center;gap:8px;cursor:pointer}
+  .sub-panel-hdr:hover{background:var(--surface3)}
+  .sub-panel-title{font-size:12px;font-weight:500;flex:1}
+  .sub-panel-body{display:none}
+  .sub-panel-body.open{display:block}
+  .sub-table{width:100%;border-collapse:collapse;font-size:11px}
+  .sub-table th{font-size:10px;font-weight:500;color:var(--text2);padding:6px 10px;border-bottom:1px solid var(--border);background:var(--surface);text-transform:uppercase;letter-spacing:.04em;font-family:var(--mono);white-space:nowrap}
+  .sub-table td{padding:5px 8px;border-bottom:1px solid var(--border)}
+  .sub-table tr:last-child td{border-bottom:none}
+  .sub-table input,.sub-table select{font-family:var(--sans);font-size:11px;width:100%;padding:4px 7px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);outline:none}
+  .sub-table input:focus{border-color:var(--accent2)}
+  .sub-footer{padding:7px 10px;display:flex;gap:8px;border-top:1px solid var(--border);background:var(--surface2)}
+  .form-actions{padding:13px 20px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border);background:var(--surface2);flex-wrap:wrap}
+
+  /* DOCUMENTACIÓN */
+  .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;padding:14px 20px;background:var(--bg)}
+  .doc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+  .doc-card-hdr{padding:8px 12px;background:var(--surface2);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+  .doc-card-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .doc-card-label{font-size:11px;font-weight:500;flex:1}
+  .doc-card-body{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+  .doc-url-row{display:flex;gap:6px;align-items:center}
+  .doc-url-input{flex:1;font-family:var(--mono);font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);outline:none;min-width:0}
+  .doc-url-input:focus{border-color:var(--accent2)}
+  .doc-url-input::placeholder{color:var(--text3);font-family:var(--sans);font-size:11px}
+  .doc-notes{font-family:var(--sans);font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);outline:none;width:100%;resize:none;height:44px}
+  .doc-notes:focus{border-color:var(--accent2)}
+  .doc-notes::placeholder{color:var(--text3)}
+  .doc-custom-section{padding:14px 20px;background:var(--bg);border-top:1px solid var(--border)}
+  .doc-custom-title{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:10px}
+  .doc-custom-list{display:flex;flex-direction:column;gap:8px}
+  .doc-custom-row{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center}
+  .doc-custom-input{font-family:var(--sans);font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);outline:none}
+  .doc-custom-input:focus{border-color:var(--accent2)}
+
+  /* DETAIL */
+  .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--border)}
+  .detail-cell{background:var(--surface);padding:11px 16px}
+  .detail-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;font-family:var(--mono)}
+  .detail-val{font-size:12px;color:var(--text);word-break:break-word}
+  .detail-val a{color:var(--accent2);text-decoration:none}
+  .detail-val a:hover{text-decoration:underline}
+  .detail-section-title{grid-column:1/-1;padding:9px 16px;background:var(--surface2);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);border-top:1px solid var(--border);font-family:var(--mono)}
+  .detail-doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;padding:12px 16px;background:var(--surface)}
+  .detail-doc-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2)}
+  .detail-doc-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+  .detail-doc-info{flex:1;min-width:0}
+  .detail-doc-label{font-size:11px;font-weight:500;margin-bottom:2px}
+  .detail-doc-link{font-size:10px;color:var(--accent2);text-decoration:none;font-family:var(--mono);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .detail-doc-link:hover{text-decoration:underline}
+  .detail-doc-notes{font-size:10px;color:var(--text3);margin-top:3px}
+
+  /* MODALS */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);width:440px;max-width:95vw;overflow:hidden}
+  .modal-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface2)}
+  .modal-hdr h3{font-size:13px;font-weight:500;flex:1}
+  .modal-body{padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-height:65vh;overflow-y:auto}
+  .modal-body p{font-size:11px;color:var(--text2)}
+  .modal-footer{padding:10px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background:var(--surface2)}
+  .modal-input{font-family:var(--sans);font-size:12px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none}
+  .modal-input:focus{border-color:var(--accent2)}
+  .custom-field-list{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+  .custom-field-row{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px}
+  .custom-field-row span{flex:1;font-family:var(--mono)}
+  .custom-field-tag{font-size:10px;color:var(--text3);background:var(--surface3);padding:2px 7px;border-radius:10px}
+
+  /* MISC */
+  .empty{text-align:center;padding:60px 20px;color:var(--text3);font-size:13px}
+  .notif{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:var(--radius-sm);font-size:12px;z-index:9999;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none;font-family:var(--mono);max-width:320px}
+  .notif.show{opacity:1;transform:translateY(0)}
+  .notif.ok{background:var(--accent);color:#fff}
+  .notif.ko{background:var(--red);color:#fff}
+  .notif.info{background:var(--blue);color:#fff}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     ASISTENTE DE CONFIGURACIÓN INICIAL
+════════════════════════════════════════ -->
+<div class="setup-overlay" id="setup-overlay">
+  <div class="setup-box">
+    <div class="setup-header">
+      <h2>Configuración inicial — 3 pasos</h2>
+      <p>Solo hay que hacerlo una vez. Tarda menos de 10 minutos.</p>
+    </div>
+    <div class="setup-body">
+
+      <div class="setup-step">
+        <div class="setup-step-num">Paso 1 — Google Sheets</div>
+        <h3>Crear la hoja de datos</h3>
+        <p>Ve a <a href="https://sheets.google.com" target="_blank">sheets.google.com</a> y crea una nueva hoja. Llámala como quieras (ej: "Empresas Internacionales"). <strong>Copia la ID que aparece en la URL</strong> — es la parte entre <code>/d/</code> y <code>/edit</code>.</p>
+        <p>Ejemplo de URL: <code>https://docs.google.com/spreadsheets/d/<strong>1BxiMV...TUKUntU</strong>/edit</code></p>
+        <div class="setup-input-row">
+          <input class="setup-input" id="cfg-sheet-id" placeholder="Pega aquí la ID del Google Sheet">
+        </div>
+        <p class="setup-note">Después de crear el Sheet, ve a Archivo → Compartir → Cualquier persona con el enlace puede editar (para que todos los usuarios puedan guardar datos).</p>
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">Paso 2 — Google Apps Script (el puente)</div>
+        <h3>Crear el script que recibe los datos</h3>
+        <p>En tu Google Sheet ve a <strong>Extensiones → Apps Script</strong>. Borra lo que haya y pega este código:</p>
+        <div style="background:var(--surface3);border-radius:var(--radius-sm);padding:12px;font-family:var(--mono);font-size:10px;line-height:1.6;color:var(--text);position:relative;margin:8px 0">
+          <div id="script-code" style="white-space:pre-wrap;word-break:break-all">function doGet(e){return handleRequest(e);}
+function doPost(e){return handleRequest(e);}
+function handleRequest(e){
+  var ss=SpreadsheetApp.getActiveSpreadsheet();
+  var sheet=ss.getSheetByName('Datos')||ss.insertSheet('Datos');
+  var action=e.parameter.action||'read';
+  var out=ContentService.createTextOutput();
+  out.setMimeType(ContentService.MimeType.JSON);
+  if(action==='read'){
+    var data=sheet.getDataRange().getValues();
+    out.setContent(JSON.stringify({ok:true,data:data}));
+  } else if(action==='write'){
+    var rows=JSON.parse(e.parameter.rows||'[]');
+    sheet.clearContents();
+    if(rows.length>0)sheet.getRange(1,1,rows.length,rows[0].length).setValues(rows);
+    out.setContent(JSON.stringify({ok:true}));
+  }
+  return out;
+}</div>
+          <button class="btn xs" style="position:absolute;top:8px;right:8px" onclick="copyScript()">Copiar</button>
+        </div>
+        <p>Pulsa <strong>Guardar</strong> (icono del disco) → luego <strong>Implementar → Nueva implementación</strong> → Tipo: <strong>Aplicación web</strong> → Ejecutar como: <strong>Yo</strong> → Acceso: <strong>Cualquier persona</strong> → Implementar.</p>
+        <p>Copia la <strong>URL de la aplicación web</strong> que aparece al final:</p>
+        <div class="setup-input-row">
+          <input class="setup-input" id="cfg-script-url" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        <p class="setup-note">Si Google te pide autorizar permisos, acéptalos — es para que el script pueda escribir en tu Sheet.</p>
+      </div>
+
+      <div class="setup-step active">
+        <div class="setup-step-num">Paso 3 — Listo</div>
+        <h3>Guardar configuración</h3>
+        <p>Pulsa el botón de abajo. La configuración se guarda en tu navegador y el dashboard quedará conectado a tu Google Sheet. Cualquier persona que abra el dashboard desde GitHub Pages y complete estos mismos pasos 1 y 2 (con el mismo Sheet) verá los mismos datos.</p>
+        <p class="setup-note">La URL del script también se puede compartir directamente entre usuarios del equipo para que todos apunten al mismo Sheet sin repetir la configuración.</p>
+      </div>
+
+    </div>
+    <div class="setup-footer">
+      <button class="btn ghost" onclick="skipSetup()">Configurar más tarde</button>
+      <button class="btn primary" onclick="saveSetup()">Guardar y empezar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <h1>&#9632; Empresas Internacionales</h1>
+  <span class="pill pill-count" id="total-badge">0 empresas</span>
+  <span class="pill pill-wait" id="gs-status">Conectando...</span>
+  <button class="topbar-btn" onclick="loadData()">↻ Actualizar</button>
+  <button class="topbar-btn" onclick="openCustomFieldsModal()">+ Campos</button>
+  <button class="topbar-btn" onclick="openSetup()">⚙ Configuración</button>
+  <button class="topbar-btn hl" onclick="exportHTML()">&#8595; Exportar HTML</button>
+</div>
+
+<!-- AUTOSAVE BAR -->
+<div class="autosave-bar">
+  <span id="autosave-status">Autoguardado activado — los cambios se guardan automáticamente en Google Sheets</span>
+  <div class="autosave-toggle" onclick="toggleAutosave()">
+    <span style="font-size:11px">Autoguardado</span>
+    <div class="toggle-sw on" id="autosave-toggle"><div class="toggle-knob"></div></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="showTab('lista')">Vista general</div>
+  <div class="tab" onclick="showTab('form');newEmpresa()">+ Nueva empresa</div>
+  <div class="tab" id="detail-tab" style="display:none" onclick="showTab('detail')">Detalle</div>
+</div>
+
+<!-- LISTA -->
+<div id="pane-lista" class="pane active">
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Total</div><div class="stat-val" id="s-total">0</div></div>
+    <div class="stat"><div class="stat-label">Activas</div><div class="stat-val" id="s-act" style="color:var(--green-text)">0</div></div>
+    <div class="stat"><div class="stat-label">Inactivas</div><div class="stat-val" id="s-ina" style="color:var(--red)">0</div></div>
+    <div class="stat"><div class="stat-label">En proceso</div><div class="stat-val" id="s-proc" style="color:var(--amber)">0</div></div>
+    <div class="stat"><div class="stat-label">Países</div><div class="stat-val" id="s-paises">0</div></div>
+  </div>
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Buscar empresa, país, licencia, freezone..." oninput="renderTable()">
+    <select id="fp" onchange="renderTable()"><option value="">Todos los países</option></select>
+    <select id="fs" onchange="renderTable()">
+      <option value="">Todos los estados</option>
+      <option>Activa</option><option>Inactiva</option><option>En proceso</option><option>Suspendida</option>
+    </select>
+    <button class="btn primary" onclick="showTab('form');newEmpresa()">+ Nueva empresa</button>
+    <button class="btn" onclick="openAddColumnModal()">+ Columna</button>
+    <button class="btn export-btn" onclick="exportHTML()">&#8595; Exportar HTML</button>
+  </div>
+  <div class="table-wrap"><div class="table-scroll">
+    <table><thead id="main-thead"></thead><tbody id="main-tbody"></tbody></table>
+  </div></div>
+</div>
+
+<!-- FORMULARIO -->
+<div id="pane-form" class="pane">
+<div class="form-wrap">
+  <div class="form-topbar">
+    <h2 id="form-title">Nueva empresa</h2>
+    <button class="btn sm ghost" onclick="showTab('lista')">Cancelar</button>
+    <button class="btn sm primary" id="save-btn" onclick="saveForm()">Guardar</button>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-hdr open" onclick="toggleSec(this)"><div class="fsec-dot"></div><span class="fsec-title">Identificación de la empresa</span><span class="fsec-arrow">▼</span></div>
+    <div class="fsec-body open">
+      <div class="fg"><label>Nombre oficial <span class="req">*</span></label><input id="f-social" type="text" placeholder="Denominación social completa"></div>
+      <div class="fg"><label>Nombre comercial</label><input id="f-comercial" type="text" placeholder="Trade name"></div>
+      <div class="fg"><label>País</label><select id="f-pais"><option value="">—</option><option>Emiratos Árabes Unidos</option><option>Arabia Saudí</option><option>Qatar</option><option>Bahréin</option><option>Kuwait</option><option>Omán</option><option>Reino Unido</option><option>Gibraltar</option><option>Malta</option><option>Luxemburgo</option><option>Países Bajos</option><option>Irlanda</option><option>Chipre</option><option>Portugal</option><option>Panamá</option><option>Singapur</option><option>Hong Kong</option><option>Islas Caimán</option><option>BVI</option><option>Otro</option></select></div>
+      <div class="fg"><label>Emirato</label><input id="f-emirato" type="text" placeholder="Dubai, Abu Dhabi..."></div>
+      <div class="fg"><label>Freezone</label><input id="f-freezone" type="text" placeholder="DIFC, ADGM, DMCC..."></div>
+      <div class="fg"><label>Tipo de empresa</label><select id="f-tipo"><option value="">—</option><option>FZE</option><option>FZC</option><option>LLC</option><option>Branch</option><option>Offshore</option><option>Holding</option><option>SPV</option><option>Otro</option></select></div>
+      <div class="fg"><label>Estado</label><select id="f-status"><option>Activa</option><option>Inactiva</option><option>En proceso</option><option>Suspendida</option></select></div>
+      <div class="fg full"><label>Descripción general</label><textarea id="f-desc" placeholder="Descripción de la empresa y actividad..."></textarea></div>
+      <div class="fg full"><label>Actividad económica oficial</label><textarea id="f-actividad" placeholder="Actividad registrada oficialmente..."></textarea></div>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-hdr" onclick="toggleSec(this)"><div class="fsec-dot"></div><span class="fsec-title">Licencias y registros fiscales</span><span class="fsec-arrow">▼</span></div>
+    <div class="fsec-body">
+      <div class="fg"><label>Fecha de constitución</label><input id="f-fconst" type="date"></div>
+      <div class="fg"><label>Periodicidad renovación</label><select id="f-periodo"><option value="">—</option><option>Anual</option><option>Bianual</option><option>Semestral</option><option>Trimestral</option></select></div>
+      <div class="fg"><label>Fecha de renovación</label><input id="f-frenov" type="date"></div>
+      <div class="fg"><label>Nº Licencia</label><input id="f-licencia" type="text" placeholder="Número de licencia"></div>
+      <div class="fg"><label>Tax Registration Number (TRN)</label><input id="f-trn" type="text" placeholder="TRN"></div>
+      <div class="fg"><label>VAT Number</label><input id="f-vat" type="text" placeholder="VAT si aplica"><div class="hint">Dejar vacío si no aplica</div></div>
+      <div class="fg"><label>Capital social</label><input id="f-capital" type="text" placeholder="Ej: 50.000 AED"></div>
+      <div class="fg"><label>Nº participaciones (PPSS)</label><input id="f-nppss" type="text"></div>
+      <div class="fg"><label>Valor participaciones (PPSS)</label><input id="f-vppss" type="text"></div>
+      <div class="fg"><label>Estatutos estándar</label><select id="f-estatutos"><option value="">—</option><option>Sí</option><option>No</option><option>Modificados</option></select></div>
+      <div class="fg"><label>Fecha cierre fiscal</label><input id="f-fcierre" type="date"></div>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-hdr" onclick="toggleSec(this)"><div class="fsec-dot"></div><span class="fsec-title">Domicilio y oficina</span><span class="fsec-arrow">▼</span></div>
+    <div class="fsec-body">
+      <div class="fg full"><label>Domicilio asignado por la freezone</label><input id="f-domfz" type="text" placeholder="Dirección oficial en la freezone"></div>
+      <div class="fg"><label>Tipo de oficina</label><select id="f-tipooficina"><option value="">—</option><option>Flexi Desk</option><option>Smart Desk</option><option>Oficina física</option><option>Domicilio virtual</option><option>Sin oficina</option></select></div>
+      <div class="fg"><label>Contrato alquiler (enlace)</label><input id="f-contratooficina" type="text" placeholder="URL o referencia"><div class="hint">Solo si hay alquiler</div></div>
+      <div class="fg full"><label>Domicilio social</label><input id="f-domicilio" type="text" placeholder="Domicilio social registrado"></div>
+      <div class="fg"><label>Correo asociado a autoridades</label><input id="f-mailaut" type="email" placeholder="email@empresa.com"></div>
+      <div class="fg"><label>Dominio + quién lo paga</label><input id="f-dominio" type="text" placeholder="empresa.com — pagado por X"></div>
+      <div class="fg"><label>Web</label><input id="f-web" type="text" placeholder="https://..."></div>
+      <div class="fg"><label>Firma y sello (enlace)</label><input id="f-firmasello" type="text" placeholder="URL al archivo"></div>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-hdr" onclick="toggleSec(this)"><div class="fsec-dot"></div><span class="fsec-title">Portales, marcas y acuerdos</span><span class="fsec-arrow">▼</span></div>
+    <div class="fsec-body">
+      <div class="fg"><label>Asesoría asociada</label><input id="f-asesoria" type="text" placeholder="Nombre asesoría"></div>
+      <div class="fg"><label>NOC asociado</label><input id="f-noc" type="text" placeholder="Referencia NOC"></div>
+      <div class="fg"><label>Portal DMCC</label><input id="f-pdmcc" type="text" placeholder="URL / usuario"></div>
+      <div class="fg"><label>Portal VARA</label><input id="f-pvara" type="text" placeholder="URL / usuario"></div>
+      <div class="fg"><label>Acuerdo comercial DMCC</label><select id="f-acuerdodmcc"><option value="">—</option><option>Sí</option><option>No</option></select></div>
+      <div class="fg full"><label>Marcas o IPs registradas y propietario</label><textarea id="f-marcas" placeholder="Marcas, titulares, registros..."></textarea></div>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-hdr" onclick="toggleSec(this)"><div class="fsec-dot"></div><span class="fsec-title">Datos del administrador / manager</span><span class="fsec-arrow">▼</span></div>
+    <div class="fsec-body">
+      <div class="fg"><label>Persona / Manager</label><input id="f-admin" type="text" placeholder="Nombre completo"></div>
+      <div class="fg"><label>Emirates ID</label><input id="f-emiratesid" type="text" placeholder="Nº Emirates ID"></div>
+      <div class="fg"><label>Nº Visado</label><input id="f-visadoadmin" type="text" placeholder="Número de visado"></div>
+      <div class="fg"><label>Pasaporte</label><input id="f-pasaporte" type="text" placeholder="Nº pasaporte"></div>
+      <div class="fg"><label>Fecha de nacimiento</label><input id="f-fnac" type="date"></div>
+      <div class="fg full"><label>Domicilio del administrador</label><input id="f-domadmin" type="text" placeholder="Dirección de residencia"></div>
+      <div class="fg"><label>Nacionalidad</label><input id="f-nac" type="text" placeholder="Nacionalidad"></div>
+      <div class="fg"><label>Teléfono</label><input id="f-tel" type="text" placeholder="+971..."></div>
+      <div class="fg"><label>Mail constitución (freezone)</label><input id="f-mailadmin" type="email" placeholder="email@..."></div>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-hdr" onclick="toggleSec(this)"><div class="fsec-dot"></div><span class="fsec-title">Accionistas</span><span class="fsec-arrow">▼</span></div>
+    <div class="fsec-body col1 open" style="padding:14px 20px">
+      <div class="sub-panel">
+        <div class="sub-panel-hdr" onclick="toggleSubPanel(this)"><span class="sub-panel-title">Accionistas asociados</span><span id="acc-count" class="badge b-gray">0</span><span style="font-size:10px;color:var(--text3);margin-left:4px">▼</span></div>
+        <div class="sub-panel-body open" id="sp-acc"><div style="overflow-x:auto"><table class="sub-table"><thead><tr><th>Nombre completo</th><th>Pasaporte</th><th>Nacionalidad</th><th>% Participación</th><th>Tipo</th><th>Email</th><th></th></tr></thead><tbody id="acc-body"></tbody></table></div><div class="sub-footer"><button class="btn xs" onclick="addSubRow('acc')">+ Accionista</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-hdr" onclick="toggleSec(this)"><div class="fsec-dot"></div><span class="fsec-title">Apoderados</span><span class="fsec-arrow">▼</span></div>
+    <div class="fsec-body col1 open" style="padding:14px 20px">
+      <div class="sub-panel">
+        <div class="sub-panel-hdr" onclick="toggleSubPanel(this)"><span class="sub-panel-title">Apoderados asociados</span><span id="apo-count" class="badge b-gray">0</span><span style="font-size:10px;color:var(--text3);margin-left:4px">▼</span></div>
+        <div class="sub-panel-body open" id="sp-apo"><div style="overflow-x:auto"><table class="sub-table"><thead><tr><th>Nombre</th><th>Pasaporte</th><th>Alcance poderes</th><th>Fecha poder</th><th>Notaría / Ref.</th><th>Email</th><th></th></tr></thead><tbody id="apo-body"></tbody></table></div><div class="sub-footer"><button class="btn xs" onclick="addSubRow('apo')">+ Apoderado</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-hdr" onclick="toggleSec(this)"><div class="fsec-dot"></div><span class="fsec-title">Visados de trabajo asociados</span><span class="fsec-arrow">▼</span></div>
+    <div class="fsec-body col1 open" style="padding:14px 20px">
+      <div class="sub-panel">
+        <div class="sub-panel-hdr" onclick="toggleSubPanel(this)"><span class="sub-panel-title">Visados asociados</span><span id="vis-count" class="badge b-gray">0</span><span style="font-size:10px;color:var(--text3);margin-left:4px">▼</span></div>
+        <div class="sub-panel-body open" id="sp-vis"><div style="overflow-x:auto"><table class="sub-table"><thead><tr><th>Titular</th><th>Nº Visado</th><th>Emirates ID</th><th>Cargo / Rol</th><th>F. Expedición</th><th>F. Caducidad</th><th>Estado</th><th></th></tr></thead><tbody id="vis-body"></tbody></table></div><div class="sub-footer"><button class="btn xs" onclick="addSubRow('vis')">+ Visado</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-hdr" onclick="toggleSec(this)"><div class="fsec-dot" style="background:#1a3f6b"></div><span class="fsec-title">Documentación oficial</span><span class="fsec-arrow">▼</span></div>
+    <div class="doc-grid" id="doc-grid-fixed"></div>
+    <div class="doc-custom-section" id="doc-custom-section">
+      <div class="doc-custom-title">Documentos adicionales</div>
+      <div class="doc-custom-list" id="doc-custom-list"></div>
+      <button class="btn xs" style="margin-top:10px" onclick="addCustomDoc()">+ Añadir documento</button>
+    </div>
+  </div>
+
+  <div class="fsec" id="custom-fields-section" style="display:none">
+    <div class="fsec-hdr" onclick="toggleSec(this)"><div class="fsec-dot"></div><span class="fsec-title">Campos personalizados</span><span class="fsec-arrow">▼</span></div>
+    <div class="fsec-body" id="custom-fields-body"></div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn ghost" onclick="showTab('lista')">Cancelar</button>
+    <button class="btn primary" id="save-btn2" onclick="saveForm()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<!-- DETALLE -->
+<div id="pane-detail" class="pane">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="btn ghost" onclick="showTab('lista')">← Volver</button>
+    <h2 id="detail-name" style="font-size:15px;font-weight:500;flex:1"></h2>
+    <button class="btn sm primary" onclick="editCurrentDetail()">Editar</button>
+    <button class="btn sm danger" onclick="deleteCurrentDetail()">Eliminar</button>
+  </div>
+  <div class="form-wrap"><div id="detail-body"></div></div>
+</div>
+
+<!-- MODAL Campos personalizados -->
+<div class="modal-overlay" id="modal-custom">
+  <div class="modal">
+    <div class="modal-hdr"><h3>Campos personalizados</h3><button class="btn xs ghost" onclick="closeModal('modal-custom')">✕</button></div>
+    <div class="modal-body">
+      <p>Añade campos extra al formulario y a la tabla.</p>
+      <div style="display:grid;grid-template-columns:1fr 110px;gap:8px">
+        <input type="text" id="new-field-name" class="modal-input" placeholder="Nombre del campo" style="width:100%">
+        <select id="new-field-type" class="modal-input"><option value="text">Texto</option><option value="date">Fecha</option><option value="select">Sí / No</option><option value="textarea">Texto largo</option><option value="url">URL</option></select>
+      </div>
+      <button class="btn primary" style="width:100%" onclick="addCustomField()">Añadir campo</button>
+      <div id="custom-field-list" class="custom-field-list"></div>
+    </div>
+    <div class="modal-footer"><button class="btn ghost" onclick="closeModal('modal-custom')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- MODAL Columna tabla -->
+<div class="modal-overlay" id="modal-col">
+  <div class="modal">
+    <div class="modal-hdr"><h3>Añadir columna a la tabla</h3><button class="btn xs ghost" onclick="closeModal('modal-col')">✕</button></div>
+    <div class="modal-body">
+      <p>Selecciona qué campo mostrar como columna adicional.</p>
+      <select id="col-field-select" class="modal-input" style="width:100%"><option value="">Seleccionar campo...</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn ghost" onclick="closeModal('modal-col')">Cancelar</button>
+      <button class="btn primary" onclick="addTableColumn()">Añadir</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIGURACIÓN — se guarda en localStorage del navegador
+// ═══════════════════════════════════════════════════════
+let CFG = { scriptUrl: '', sheetId: '' };
+
+function loadCFG() {
+  try { const c = localStorage.getItem('emp-cfg'); if(c) CFG = JSON.parse(c); } catch(e) {}
+}
+function saveCFG() {
+  try { localStorage.setItem('emp-cfg', JSON.stringify(CFG)); } catch(e) {}
+}
+function isConfigured() { return !!CFG.scriptUrl; }
+
+// ═══════════════════════════════════════════════════════
+// SETUP WIZARD
+// ═══════════════════════════════════════════════════════
+function openSetup() {
+  document.getElementById('cfg-script-url').value = CFG.scriptUrl || '';
+  document.getElementById('cfg-sheet-id').value   = CFG.sheetId  || '';
+  document.getElementById('setup-overlay').classList.remove('hidden');
+}
+function skipSetup() {
+  document.getElementById('setup-overlay').classList.add('hidden');
+  if (!isConfigured()) {
+    setStatus('err', 'Sin configurar');
+    notify('Configura la conexión con Google Sheets para guardar datos', 'info');
+  }
+}
+function saveSetup() {
+  const url = document.getElementById('cfg-script-url').value.trim();
+  const id  = document.getElementById('cfg-sheet-id').value.trim();
+  if (!url) { notify('Pega la URL del Apps Script', 'ko'); return; }
+  CFG.scriptUrl = url;
+  CFG.sheetId   = id;
+  saveCFG();
+  document.getElementById('setup-overlay').classList.add('hidden');
+  notify('Configuración guardada ✓', 'ok');
+  loadData();
+}
+function copyScript() {
+  const txt = document.getElementById('script-code').textContent;
+  navigator.clipboard.writeText(txt).then(() => notify('Código copiado', 'ok'));
+}
+
+// ═══════════════════════════════════════════════════════
+// GOOGLE SHEETS API via Apps Script
+// ═══════════════════════════════════════════════════════
+function setStatus(state, msg) {
+  const el = document.getElementById('gs-status');
+  el.className = 'pill pill-' + state;
+  el.textContent = msg;
+}
+
+async function gsRead() {
+  if (!isConfigured()) return null;
+  const r = await fetch(`${CFG.scriptUrl}?action=read`, { redirect: 'follow' });
+  const d = await r.json();
+  return d.ok ? d.data : null;
+}
+
+async function gsWrite(rows) {
+  if (!isConfigured()) return false;
+  const params = new URLSearchParams({ action: 'write', rows: JSON.stringify(rows) });
+  const r = await fetch(CFG.scriptUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+    redirect: 'follow'
+  });
+  const d = await r.json();
+  return d.ok === true;
+}
+
+// Serialización: cada empresa = 1 fila con JSON en columna A
+function empToRow(emp) { return [JSON.stringify(emp)]; }
+function rowToEmp(row) { try { return JSON.parse(row[0]); } catch(e) { return null; } }
+
+async function loadData() {
+  if (!isConfigured()) { setStatus('err', 'Sin configurar'); renderTable(); return; }
+  setStatus('wait', 'Cargando...');
+  try {
+    const data = await gsRead();
+    if (!data) throw new Error('Sin datos');
+    // Filtrar filas vacías y config
+    empresas = data
+      .filter(r => r[0] && r[0] !== '__CONFIG__')
+      .map(r => rowToEmp(r))
+      .filter(Boolean);
+    // Buscar config
+    const cfgRow = data.find(r => {
+      try { const p = JSON.parse(r[0]); return p.__type === 'config'; } catch(e){ return false; }
+    });
+    if (cfgRow) {
+      try {
+        const cfg = JSON.parse(cfgRow[0]);
+        if (cfg.customFields) customFields = cfg.customFields;
+        if (cfg.visibleCols)  visibleCols  = cfg.visibleCols;
+      } catch(e) {}
+    }
+    localStorage.setItem('emp-backup', JSON.stringify(empresas));
+    rebuildCustomFieldsInForm();
+    setStatus('ok', 'Google Sheets ✓');
+    renderTable();
+  } catch(e) {
+    setStatus('err', 'Error conexión');
+    try { const l=localStorage.getItem('emp-backup'); if(l) empresas=JSON.parse(l); } catch(e2){}
+    renderTable();
+    notify('No se pudo conectar. Mostrando datos locales.', 'ko');
+  }
+}
+
+async function saveAllToGS() {
+  if (!isConfigured()) { localStorage.setItem('emp-backup', JSON.stringify(empresas)); return false; }
+  setStatus('saving', 'Guardando...');
+  try {
+    const cfgObj = { __type: 'config', customFields, visibleCols };
+    const rows = [
+      [JSON.stringify(cfgObj)],
+      ...empresas.map(e => [JSON.stringify(e)])
+    ];
+    const ok = await gsWrite(rows);
+    localStorage.setItem('emp-backup', JSON.stringify(empresas));
+    setStatus(ok ? 'ok' : 'err', ok ? 'Google Sheets ✓' : 'Error al guardar');
+    return ok;
+  } catch(e) {
+    setStatus('err', 'Error al guardar');
+    localStorage.setItem('emp-backup', JSON.stringify(empresas));
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTOGUARDADO
+// ═══════════════════════════════════════════════════════
+let autosaveEnabled = true, autosaveTimer = null;
+
+function toggleAutosave() {
+  autosaveEnabled = !autosaveEnabled;
+  document.getElementById('autosave-toggle').classList.toggle('on', autosaveEnabled);
+  document.getElementById('autosave-status').textContent = autosaveEnabled
+    ? 'Autoguardado activado — los cambios se guardan automáticamente en Google Sheets'
+    : 'Autoguardado desactivado — usa el botón Guardar manualmente';
+  notify(autosaveEnabled ? 'Autoguardado activado' : 'Autoguardado desactivado', 'info');
+}
+
+function scheduleAutosave() {
+  if (!autosaveEnabled) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => saveAllToGS(), 1200);
+}
+
+// ═══════════════════════════════════════════════════════
+// EXPORTAR HTML CON DATOS
+// ═══════════════════════════════════════════════════════
+function exportHTML() {
+  const snap = { empresas: JSON.parse(JSON.stringify(empresas)), customFields: JSON.parse(JSON.stringify(customFields)), visibleCols: JSON.parse(JSON.stringify(visibleCols)) };
+  const script = `<script id="__ed__">(function(){try{window.__EMBEDDED_DATA__=${JSON.stringify(snap)};}catch(e){}})();<\/script>`;
+  const html = document.documentElement.outerHTML.replace('</head>', script + '</head>');
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `empresas_${new Date().toISOString().slice(0,10)}.html`; a.click();
+  URL.revokeObjectURL(url);
+  notify(`HTML exportado con ${empresas.length} empresa${empresas.length!==1?'s':''}`, 'ok');
+}
+
+// ═══════════════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════════════
+let empresas = [], editId = null, detailId = null;
+let customFields = [], accRows = [], apoRows = [], visRows = [];
+let visibleCols = ['social','comercial','pais','emirato','freezone','status','licencia','trn','admin','fconst','frenov'];
+
+const ALL_FIELDS = [
+  {key:'social',label:'Nombre oficial'},{key:'comercial',label:'Nombre comercial'},
+  {key:'pais',label:'País'},{key:'emirato',label:'Emirato'},{key:'freezone',label:'Freezone'},
+  {key:'tipo',label:'Tipo'},{key:'status',label:'Estado'},{key:'licencia',label:'Licencia'},
+  {key:'trn',label:'TRN'},{key:'vat',label:'VAT'},{key:'capital',label:'Capital'},
+  {key:'fconst',label:'F. Constitución'},{key:'frenov',label:'F. Renovación'},{key:'fcierre',label:'Cierre fiscal'},
+  {key:'asesoria',label:'Asesoría'},{key:'admin',label:'Administrador'},{key:'mailadmin',label:'Mail admin'},
+  {key:'tel',label:'Teléfono'},{key:'domicilio',label:'Domicilio'},{key:'mailaut',label:'Correo aut.'},
+  {key:'web',label:'Web'},{key:'dominio',label:'Dominio'},{key:'noc',label:'NOC'},
+  {key:'pdmcc',label:'Portal DMCC'},{key:'pvara',label:'Portal VARA'},{key:'acuerdodmcc',label:'Acuerdo DMCC'},
+];
+
+const FIELD_IDS = ['social','comercial','pais','emirato','freezone','tipo','status','desc','actividad',
+  'fconst','periodo','frenov','licencia','trn','vat','capital','nppss','vppss','estatutos','fcierre',
+  'domfz','tipooficina','contratooficina','domicilio','mailaut','dominio','web','firmasello',
+  'asesoria','noc','pdmcc','pvara','acuerdodmcc','marcas',
+  'admin','emiratesid','visadoadmin','pasaporte','fnac','domadmin','nac','tel','mailadmin'];
+
+const SUB_CFG = {
+  acc:{body:'acc-body',count:'acc-count',cols:[{t:'text',p:'Nombre'},{t:'text',p:'Pasaporte'},{t:'text',p:'Nac.'},{t:'text',p:'%'},{t:'text',p:'Tipo'},{t:'email',p:'Email'}]},
+  apo:{body:'apo-body',count:'apo-count',cols:[{t:'text',p:'Nombre'},{t:'text',p:'Pasaporte'},{t:'text',p:'Poderes'},{t:'date',p:''},{t:'text',p:'Notaría'},{t:'email',p:'Email'}]},
+  vis:{body:'vis-body',count:'vis-count',cols:[{t:'text',p:'Titular'},{t:'text',p:'Nº Visado'},{t:'text',p:'Emirates ID'},{t:'text',p:'Cargo'},{t:'date',p:''},{t:'date',p:''},{t:'text',p:'Estado'}]}
+};
+
+const DOC_TYPES = [
+  {id:'licencia',label:'Licencia comercial',icon:'📄',color:'#e8f0eb'},{id:'trn_doc',label:'Certificado TRN',icon:'🧾',color:'#e8eef6'},
+  {id:'vat_doc',label:'Certificado VAT',icon:'🧾',color:'#e8eef6'},{id:'constitucion',label:'Acta de constitución',icon:'📋',color:'#fef3dc'},
+  {id:'estatutos',label:'Estatutos sociales',icon:'📋',color:'#fef3dc'},{id:'pasaporte_doc',label:'Pasaporte administrador',icon:'🛂',color:'#f0efe9'},
+  {id:'emiratesid_doc',label:'Emirates ID',icon:'🪪',color:'#f0efe9'},{id:'visado_doc',label:'Visado administrador',icon:'✈️',color:'#f0efe9'},
+  {id:'contrato_of',label:'Contrato de oficina',icon:'🏢',color:'#fdeaea'},{id:'noc_doc',label:'NOC',icon:'📝',color:'#fdeaea'},
+  {id:'marcas_doc',label:'Registro de marcas / IPs',icon:'™️',color:'#eeedfe'},{id:'poder_not',label:'Poder notarial',icon:'⚖️',color:'#eeedfe'},
+  {id:'auditoria',label:'Auditoría / Cuentas anuales',icon:'📊',color:'#e8f0eb'},{id:'otro_doc',label:'Otros documentos',icon:'📁',color:'#f0efe9'},
+];
+
+// ═══════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════
+function showTab(t){['lista','form','detail'].forEach(p=>document.getElementById('pane-'+p).classList.toggle('active',p===t));document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',(t==='lista'&&i===0)||(t==='form'&&i===1)||(t==='detail'&&i===2)));}
+function toggleSec(hdr){const body=hdr.nextElementSibling;const open=body.classList.contains('open');body.classList.toggle('open',!open);hdr.classList.toggle('open',!open);}
+function toggleSubPanel(hdr){hdr.nextElementSibling.classList.toggle('open');}
+
+// ═══════════════════════════════════════════════════════
+// DOCUMENTACIÓN
+// ═══════════════════════════════════════════════════════
+function renderDocForm(docs){
+  docs=docs||{predefined:{},custom:[]};
+  document.getElementById('doc-grid-fixed').innerHTML=DOC_TYPES.map(dt=>{
+    const d=(docs.predefined&&docs.predefined[dt.id])||{};
+    return`<div class="doc-card"><div class="doc-card-hdr"><div class="doc-card-icon" style="background:${dt.color}">${dt.icon}</div><span class="doc-card-label">${dt.label}</span></div><div class="doc-card-body"><div class="doc-url-row"><input class="doc-url-input" id="doc-url-${dt.id}" type="text" placeholder="Enlace al documento (SharePoint, Drive...)" value="${d.url||''}"><button class="btn xs" onclick="openDocLink('doc-url-${dt.id}')" title="Abrir">↗</button></div><textarea class="doc-notes" id="doc-notes-${dt.id}" placeholder="Notas (ref., fecha...)">${d.notes||''}</textarea></div></div>`;
+  }).join('');
+  const list=document.getElementById('doc-custom-list');list.innerHTML='';
+  (docs.custom||[]).forEach((cd,i)=>addCustomDocRow(cd,i));
+}
+function addCustomDoc(){const i=document.getElementById('doc-custom-list').children.length;addCustomDocRow({label:'',url:''},i);}
+function addCustomDocRow(cd,i){const list=document.getElementById('doc-custom-list');const div=document.createElement('div');div.className='doc-custom-row';div.id=`cdoc-${i}`;div.innerHTML=`<input class="doc-custom-input" id="cdoc-label-${i}" placeholder="Nombre" value="${cd.label||''}"><input class="doc-custom-input" id="cdoc-url-${i}" placeholder="Enlace URL" value="${cd.url||''}"><button class="btn xs danger" onclick="this.parentElement.remove()">✕</button>`;list.appendChild(div);}
+function openDocLink(inputId){const url=document.getElementById(inputId)?.value?.trim();if(url)window.open(url,'_blank');else notify('Añade un enlace primero','ko');}
+function collectDocs(){
+  const predefined={};
+  DOC_TYPES.forEach(dt=>{const url=(document.getElementById(`doc-url-${dt.id}`)?.value||'').trim();const notes=(document.getElementById(`doc-notes-${dt.id}`)?.value||'').trim();if(url||notes)predefined[dt.id]={url,notes};});
+  const custom=[];
+  document.querySelectorAll('#doc-custom-list .doc-custom-row').forEach((row,i)=>{const label=(document.getElementById(`cdoc-label-${i}`)?.value||'').trim();const url=(document.getElementById(`cdoc-url-${i}`)?.value||'').trim();if(label||url)custom.push({label,url});});
+  return{predefined,custom};
+}
+
+// ═══════════════════════════════════════════════════════
+// SUB-FILAS
+// ═══════════════════════════════════════════════════════
+function addSubRow(type,data){const cfg=SUB_CFG[type];const id='r'+Date.now().toString(36)+Math.random().toString(36).slice(2);const arr=type==='acc'?accRows:type==='apo'?apoRows:visRows;arr.push(id);const tr=document.createElement('tr');tr.id=id;tr.innerHTML=cfg.cols.map((col,i)=>`<td><input type="${col.t}" placeholder="${col.p}" value="${data?data['c'+i]||'':''}" style="min-width:${col.t==='date'?'120px':'90px'}"></td>`).join('')+`<td><button class="btn xs danger" onclick="removeSubRow('${type}','${id}')">✕</button></td>`;document.getElementById(cfg.body).appendChild(tr);document.getElementById(cfg.count).textContent=arr.length;}
+function removeSubRow(type,id){const arr=type==='acc'?accRows:type==='apo'?apoRows:visRows;arr.splice(arr.indexOf(id),1);document.getElementById(id)?.remove();document.getElementById(SUB_CFG[type].count).textContent=arr.length;}
+function collectSubRows(type){const rows=[];document.getElementById(SUB_CFG[type].body).querySelectorAll('tr').forEach(tr=>{const row={};tr.querySelectorAll('input').forEach((el,i)=>row['c'+i]=el.value);rows.push(row);});return rows;}
+function clearSubTable(type){document.getElementById(SUB_CFG[type].body).innerHTML='';(type==='acc'?accRows:type==='apo'?apoRows:visRows).length=0;document.getElementById(SUB_CFG[type].count).textContent='0';}
+
+// ═══════════════════════════════════════════════════════
+// FORMULARIO
+// ═══════════════════════════════════════════════════════
+function clearForm(){editId=null;document.getElementById('form-title').textContent='Nueva empresa';FIELD_IDS.forEach(id=>{const el=document.getElementById('f-'+id);if(el)el.tagName==='SELECT'?el.selectedIndex=0:el.value='';});['acc','apo','vis'].forEach(t=>clearSubTable(t));customFields.forEach(cf=>{const el=document.getElementById('fcf-'+cf.id);if(el)el.value='';});renderDocForm({predefined:{},custom:[]});}
+function newEmpresa(){clearForm();}
+
+function setSavingState(s){[document.getElementById('save-btn'),document.getElementById('save-btn2')].forEach(b=>{if(b){b.disabled=s;b.innerHTML=s?'<span class="spin"></span> Guardando...':'Guardar';}});}
+
+async function saveForm(){
+  const social=document.getElementById('f-social').value.trim();
+  if(!social){notify('El nombre oficial es obligatorio','ko');return;}
+  const gv=id=>{const el=document.getElementById('f-'+id);return el?el.value:'';};
+  const existing=editId?empresas.find(e=>e.id===editId):null;
+  const emp={
+    id:editId||(Date.now().toString(36)+Math.random().toString(36).slice(2)),
+    social,comercial:gv('comercial'),pais:gv('pais'),emirato:gv('emirato'),freezone:gv('freezone'),
+    tipo:gv('tipo'),status:gv('status')||'Activa',desc:gv('desc'),actividad:gv('actividad'),
+    fconst:gv('fconst'),periodo:gv('periodo'),frenov:gv('frenov'),licencia:gv('licencia'),
+    trn:gv('trn'),vat:gv('vat'),capital:gv('capital'),nppss:gv('nppss'),vppss:gv('vppss'),
+    estatutos:gv('estatutos'),fcierre:gv('fcierre'),domfz:gv('domfz'),
+    tipooficina:gv('tipooficina'),contratooficina:gv('contratooficina'),
+    domicilio:gv('domicilio'),mailaut:gv('mailaut'),dominio:gv('dominio'),
+    web:gv('web'),firmasello:gv('firmasello'),asesoria:gv('asesoria'),noc:gv('noc'),
+    pdmcc:gv('pdmcc'),pvara:gv('pvara'),acuerdodmcc:gv('acuerdodmcc'),marcas:gv('marcas'),
+    admin:gv('admin'),emiratesid:gv('emiratesid'),visadoadmin:gv('visadoadmin'),
+    pasaporte:gv('pasaporte'),fnac:gv('fnac'),domadmin:gv('domadmin'),
+    nac:gv('nac'),tel:gv('tel'),mailadmin:gv('mailadmin'),
+    accionistas:collectSubRows('acc'),apoderados:collectSubRows('apo'),visados:collectSubRows('vis'),
+    docs:collectDocs(),custom:{}
+  };
+  customFields.forEach(cf=>{const el=document.getElementById('fcf-'+cf.id);emp.custom[cf.id]=el?el.value:'';});
+  if(editId){const i=empresas.findIndex(e=>e.id===editId);if(i>=0)empresas[i]=emp;}else{empresas.push(emp);}
+  setSavingState(true);
+  const ok=await saveAllToGS();
+  setSavingState(false);
+  clearForm();showTab('lista');renderTable();
+  notify(ok?'✓ Guardado en Google Sheets':'⚠ Guardado local (sin conexión)',ok?'ok':'ko');
+}
+
+function editEmpresa(id){const e=empresas.find(x=>x.id===id);if(!e)return;editId=id;document.getElementById('form-title').textContent='Editar empresa';FIELD_IDS.forEach(fid=>{const el=document.getElementById('f-'+fid);if(el)el.value=e[fid]||'';});['acc','apo','vis'].forEach(t=>clearSubTable(t));(e.accionistas||[]).forEach(row=>addSubRow('acc',row));(e.apoderados||[]).forEach(row=>addSubRow('apo',row));(e.visados||[]).forEach(row=>addSubRow('vis',row));customFields.forEach(cf=>{const el=document.getElementById('fcf-'+cf.id);if(el)el.value=(e.custom&&e.custom[cf.id])||'';});renderDocForm(e.docs||{predefined:{},custom:[]});showTab('form');window.scrollTo(0,0);}
+
+// ═══════════════════════════════════════════════════════
+// DETALLE
+// ═══════════════════════════════════════════════════════
+function viewDetail(id){
+  const e=empresas.find(x=>x.id===id);if(!e)return;detailId=id;
+  document.getElementById('detail-name').textContent=e.social||'—';
+  document.getElementById('detail-tab').style.display='block';
+  const fmt=d=>{if(!d)return'—';const p=d.split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d;};
+  const val=v=>v||'—';const lnk=v=>v?`<a href="${v}" target="_blank">${v}</a>`:'—';
+  const secs=[
+    {t:'Identificación',f:[['Nombre oficial',val(e.social)],['Nombre comercial',val(e.comercial)],['País',val(e.pais)],['Emirato',val(e.emirato)],['Freezone',val(e.freezone)],['Tipo',val(e.tipo)],['Estado',val(e.status)],['Descripción',val(e.desc)],['Actividad',val(e.actividad)]]},
+    {t:'Licencias y fiscal',f:[['F. Constitución',fmt(e.fconst)],['Periodicidad',val(e.periodo)],['F. Renovación',fmt(e.frenov)],['Nº Licencia',val(e.licencia)],['TRN',val(e.trn)],['VAT',val(e.vat)],['Capital',val(e.capital)],['Nº PPSS',val(e.nppss)],['Valor PPSS',val(e.vppss)],['Estatutos',val(e.estatutos)],['Cierre fiscal',fmt(e.fcierre)]]},
+    {t:'Domicilio y oficina',f:[['Dom. freezone',val(e.domfz)],['Tipo oficina',val(e.tipooficina)],['Contrato',lnk(e.contratooficina)],['Dom. social',val(e.domicilio)],['Correo aut.',val(e.mailaut)],['Dominio',val(e.dominio)],['Web',lnk(e.web)],['Firma/sello',lnk(e.firmasello)]]},
+    {t:'Portales y acuerdos',f:[['Asesoría',val(e.asesoria)],['NOC',val(e.noc)],['Portal DMCC',val(e.pdmcc)],['Portal VARA',val(e.pvara)],['Acuerdo DMCC',val(e.acuerdodmcc)],['Marcas/IPs',val(e.marcas)]]},
+    {t:'Administrador',f:[['Manager',val(e.admin)],['Emirates ID',val(e.emiratesid)],['Visado',val(e.visadoadmin)],['Pasaporte',val(e.pasaporte)],['F. Nac.',fmt(e.fnac)],['Domicilio',val(e.domadmin)],['Nac.',val(e.nac)],['Teléfono',val(e.tel)],['Mail freezone',val(e.mailadmin)]]}
+  ];
+  let html='';
+  secs.forEach(s=>{html+=`<div class="detail-grid"><div class="detail-section-title">${s.t}</div>`;s.f.forEach(([l,v])=>html+=`<div class="detail-cell"><div class="detail-label">${l}</div><div class="detail-val">${v}</div></div>`);html+=`</div>`;});
+  [{data:e.accionistas,t:'Accionistas',heads:['Nombre','Pasaporte','Nac.','%','Tipo','Email'],n:6},
+   {data:e.apoderados,t:'Apoderados',heads:['Nombre','Pasaporte','Poderes','Fecha','Notaría','Email'],n:6},
+   {data:e.visados,t:'Visados de trabajo',heads:['Titular','Nº Visado','Emirates ID','Cargo','F. Exp.','F. Cad.','Estado'],n:7}
+  ].forEach(st=>{
+    if(!(st.data||[]).length)return;
+    html+=`<div class="detail-grid"><div class="detail-section-title">${st.t} (${st.data.length})</div></div><div style="overflow-x:auto;border-top:1px solid var(--border)"><table class="sub-table"><thead><tr>${st.heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${st.data.map(r=>`<tr>${[...Array(st.n)].map((_,i)=>`<td>${r['c'+i]||'—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  });
+  const docs=e.docs||{predefined:{},custom:[]};
+  const allDocs=[...DOC_TYPES.filter(dt=>docs.predefined&&docs.predefined[dt.id]?.url).map(dt=>({label:dt.label,icon:dt.icon,url:docs.predefined[dt.id].url,notes:docs.predefined[dt.id].notes||''})),...(docs.custom||[]).filter(cd=>cd.url||cd.label).map(cd=>({label:cd.label||'Documento',icon:'📁',url:cd.url,notes:''}))];
+  html+=`<div class="detail-grid"><div class="detail-section-title">Documentación oficial (${allDocs.length})</div></div>`;
+  html+=`<div class="detail-doc-grid">${allDocs.length?allDocs.map(d=>`<div class="detail-doc-item"><div class="detail-doc-icon">${d.icon}</div><div class="detail-doc-info"><div class="detail-doc-label">${d.label}</div>${d.url?`<a class="detail-doc-link" href="${d.url}" target="_blank">${d.url}</a>`:'<span style="font-size:10px;color:var(--text3)">Sin enlace</span>'}${d.notes?`<div class="detail-doc-notes">${d.notes}</div>`:''}</div></div>`).join(''):'<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:11px">Sin documentos adjuntos</div>'}</div>`;
+  if(customFields.length&&e.custom){html+=`<div class="detail-grid"><div class="detail-section-title">Campos personalizados</div>${customFields.map(cf=>`<div class="detail-cell"><div class="detail-label">${cf.name}</div><div class="detail-val">${e.custom[cf.id]||'—'}</div></div>`).join('')}</div>`;}
+  document.getElementById('detail-body').innerHTML=html;
+  showTab('detail');
+}
+function editCurrentDetail(){if(detailId)editEmpresa(detailId);}
+async function deleteCurrentDetail(){
+  if(!detailId||!confirm('¿Eliminar esta empresa?'))return;
+  empresas=empresas.filter(x=>x.id!==detailId);
+  detailId=null;document.getElementById('detail-tab').style.display='none';
+  await saveAllToGS();showTab('lista');renderTable();notify('Empresa eliminada','ok');
+}
+
+// ═══════════════════════════════════════════════════════
+// TABLA
+// ═══════════════════════════════════════════════════════
+const sbadge=s=>{const m={Activa:'b-green',Inactiva:'b-red','En proceso':'b-amber',Suspendida:'b-gray'};return`<span class="badge ${m[s]||'b-gray'}">${s||'—'}</span>`;};
+const fmt=d=>{if(!d)return'—';const p=d.split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d;};
+
+function renderTableHeader(){
+  const colDefs=[...ALL_FIELDS,...customFields.map(cf=>({key:'custom_'+cf.id,label:cf.name,isCustom:true}))];
+  const cols=visibleCols.map(k=>colDefs.find(f=>f.key===k)).filter(Boolean);
+  const tr=document.createElement('tr');
+  cols.forEach(col=>{const th=document.createElement('th');th.textContent=col.label;if(col.isCustom)th.style.color='var(--accent2)';tr.appendChild(th);});
+  const thD=document.createElement('th');thD.textContent='Docs';thD.style.width='48px';tr.appendChild(thD);
+  const thA=document.createElement('th');thA.style.width='60px';tr.appendChild(thA);
+  const thead=document.getElementById('main-thead');thead.innerHTML='';thead.appendChild(tr);
+}
+
+function renderTable(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const fp=document.getElementById('fp').value;const fs=document.getElementById('fs').value;
+  const filtered=empresas.filter(e=>{const m=!q||(e.social+e.comercial+e.pais+e.emirato+e.licencia+e.freezone+e.asesoria+e.trn).toLowerCase().includes(q);return m&&(!fp||e.pais===fp)&&(!fs||e.status===fs);});
+  renderTableHeader();
+  const colDefs=[...ALL_FIELDS,...customFields.map(cf=>({key:'custom_'+cf.id,label:cf.name,isCustom:true}))];
+  const cols=visibleCols.map(k=>colDefs.find(f=>f.key===k)).filter(Boolean);
+  const tbody=document.getElementById('main-tbody');
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="${cols.length+2}"><div class="empty">Sin empresas registradas. Pulsa "+ Nueva empresa" para empezar.</div></td></tr>`;updateStats();return;}
+  tbody.innerHTML=filtered.map(e=>{
+    const cells=cols.map(col=>{
+      if(col.key==='status')return`<td>${sbadge(e.status)}</td>`;
+      if(['fconst','frenov','fcierre'].includes(col.key))return`<td>${fmt(e[col.key])}</td>`;
+      if(col.key.startsWith('custom_')){const v=(e.custom&&e.custom[col.key.replace('custom_','')])||'—';return`<td title="${v}">${v}</td>`;}
+      const v=e[col.key]||'—';return`<td title="${v}">${v}</td>`;
+    }).join('');
+    const docCount=Object.keys((e.docs&&e.docs.predefined)||{}).length+((e.docs&&e.docs.custom)||[]).filter(d=>d.url||d.label).length;
+    const docBadge=docCount>0?`<span class="badge b-blue">${docCount}</span>`:'<span style="color:var(--text3);font-size:11px">—</span>';
+    return`<tr onclick="viewDetail('${e.id}')">${cells}<td style="text-align:center">${docBadge}</td><td onclick="event.stopPropagation()"><div style="display:flex;gap:4px"><button class="btn xs" onclick="editEmpresa('${e.id}')">✎</button><button class="btn xs danger" onclick="confirmDelete('${e.id}')">✕</button></div></td></tr>`;
+  }).join('');
+  updateStats();
+}
+
+async function confirmDelete(id){
+  if(!confirm('¿Eliminar esta empresa?'))return;
+  empresas=empresas.filter(x=>x.id!==id);
+  await saveAllToGS();renderTable();notify('Empresa eliminada','ok');
+}
+
+function updateStats(){
+  document.getElementById('s-total').textContent=empresas.length;
+  document.getElementById('s-act').textContent=empresas.filter(e=>e.status==='Activa').length;
+  document.getElementById('s-ina').textContent=empresas.filter(e=>e.status==='Inactiva').length;
+  document.getElementById('s-proc').textContent=empresas.filter(e=>e.status==='En proceso').length;
+  document.getElementById('s-paises').textContent=[...new Set(empresas.map(e=>e.pais).filter(Boolean))].length;
+  document.getElementById('total-badge').textContent=`${empresas.length} empresa${empresas.length!==1?'s':''}`;
+  const sel=document.getElementById('fp'),cur=sel.value;
+  const pl=[...new Set(empresas.map(e=>e.pais).filter(Boolean))].sort();
+  sel.innerHTML='<option value="">Todos los países</option>'+pl.map(p=>`<option${p===cur?' selected':''}>${p}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// CAMPOS PERSONALIZADOS
+// ═══════════════════════════════════════════════════════
+function openCustomFieldsModal(){renderCustomFieldList();document.getElementById('modal-custom').classList.add('open');}
+function addCustomField(){const name=document.getElementById('new-field-name').value.trim(),type=document.getElementById('new-field-type').value;if(!name){notify('Escribe un nombre','ko');return;}if(customFields.find(f=>f.name.toLowerCase()===name.toLowerCase())){notify('Ya existe ese campo','ko');return;}customFields.push({id:'cf_'+Date.now().toString(36),name,type});document.getElementById('new-field-name').value='';renderCustomFieldList();rebuildCustomFieldsInForm();saveAllToGS();notify('Campo añadido: '+name,'ok');}
+function removeCustomField(id){customFields=customFields.filter(f=>f.id!==id);visibleCols=visibleCols.filter(c=>c!==('custom_'+id));renderCustomFieldList();rebuildCustomFieldsInForm();renderTable();saveAllToGS();}
+function renderCustomFieldList(){const list=document.getElementById('custom-field-list');list.innerHTML=!customFields.length?'<div style="font-size:11px;color:var(--text3);text-align:center;padding:10px">Sin campos personalizados todavía</div>':customFields.map(cf=>`<div class="custom-field-row"><span>${cf.name}</span><span class="custom-field-tag">${cf.type}</span><button class="btn xs danger" onclick="removeCustomField('${cf.id}')">Eliminar</button></div>`).join('');}
+function rebuildCustomFieldsInForm(){const body=document.getElementById('custom-fields-body'),section=document.getElementById('custom-fields-section');if(!customFields.length){section.style.display='none';body.innerHTML='';return;}section.style.display='block';body.innerHTML=customFields.map(cf=>{const input=cf.type==='textarea'?`<textarea id="fcf-${cf.id}" placeholder="${cf.name}..."></textarea>`:cf.type==='select'?`<select id="fcf-${cf.id}"><option value="">—</option><option>Sí</option><option>No</option></select>`:`<input type="${cf.type}" id="fcf-${cf.id}" placeholder="${cf.name}">`;return`<div class="fg"><label>${cf.name}</label>${input}</div>`;}).join('');if(!body.classList.contains('open'))body.classList.add('open');}
+
+// ═══════════════════════════════════════════════════════
+// COLUMNAS
+// ═══════════════════════════════════════════════════════
+function openAddColumnModal(){const sel=document.getElementById('col-field-select');const all=[...ALL_FIELDS,...customFields.map(cf=>({key:'custom_'+cf.id,label:cf.name+' (personalizado)'}))];sel.innerHTML='<option value="">Seleccionar campo...</option>'+all.filter(f=>!visibleCols.includes(f.key)).map(f=>`<option value="${f.key}">${f.label}</option>`).join('');document.getElementById('modal-col').classList.add('open');}
+function addTableColumn(){const val=document.getElementById('col-field-select').value;if(!val){notify('Selecciona un campo','ko');return;}if(!visibleCols.includes(val)){visibleCols.push(val);renderTable();saveAllToGS();notify('Columna añadida','ok');}closeModal('modal-col');}
+
+// ═══════════════════════════════════════════════════════
+// MODALS / NOTIF
+// ═══════════════════════════════════════════════════════
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
+function notify(msg,type='ok'){const el=document.getElementById('notif');el.textContent=msg;el.className=`notif ${type} show`;setTimeout(()=>el.classList.remove('show'),3200);}
+
+// ═══════════════════════════════════════════════════════
+// INICIO
+// ═══════════════════════════════════════════════════════
+(function init(){
+  // Si el HTML fue exportado con datos embebidos
+  if(window.__EMBEDDED_DATA__){
+    const d=window.__EMBEDDED_DATA__;
+    empresas=d.empresas||[];customFields=d.customFields||[];visibleCols=d.visibleCols||visibleCols;
+    rebuildCustomFieldsInForm();renderTable();
+    setStatus('ok','Datos embebidos ✓');
+    document.getElementById('autosave-status').textContent='Modo offline — datos cargados desde exportación.';
+    return;
+  }
+  loadCFG();
+  // Cargar backup local mientras conecta
+  try{const l=localStorage.getItem('emp-backup');if(l){empresas=JSON.parse(l);renderTable();}}catch(e){}
+  rebuildCustomFieldsInForm();
+  if(!isConfigured()){
+    // Mostrar setup wizard la primera vez
+    openSetup();
+    setStatus('err','Sin configurar');
+  } else {
+    loadData();
+  }
+})();
+</script>
+</body>
+</html>
